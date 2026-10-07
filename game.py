@@ -28,7 +28,11 @@ def platform_y(platform, x):
 
 def theme_color(score):
     """Return an (r, g, b) background colour for the current score, or None for the default."""
-    pass
+    if score <= 0:
+        return None
+    warm = (70, 28, 18)  # warm dark red-orange
+    t = min(score / 3000, 1.0)
+    return tuple(int(BG[i] + (warm[i] - BG[i]) * t) for i in range(3))
 
 
 def on_barrel_jumped(player, barrel):
