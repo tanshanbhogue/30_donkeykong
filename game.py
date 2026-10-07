@@ -22,6 +22,7 @@ PRINCESS_POS = (540, 200)
 
 
 POPUP_LIFETIME = 0.8  # seconds a floating label stays on screen
+LAST_AWARD = [100]  # points given for the most recent barrel jump
 POPUPS = []  # active floating labels: {"pos", "age", "text"}
 
 
@@ -48,12 +49,14 @@ def theme_color(score):
 
 def on_barrel_jumped(player, barrel):
     """Called when the player clears a barrel; spawns a floating "+100" label."""
-    POPUPS.append({"pos": pygame.Vector2(barrel.pos), "age": 0.0, "text": "+100"})
+    POPUPS.append({"pos": pygame.Vector2(barrel.pos), "age": 0.0, "text": f"+{LAST_AWARD[0]}"})
 
 
 def score_multiplier(score):
     """Return a multiplier applied to points earned from clearing a barrel, or None for the default 1x."""
-    pass
+    if score >= 1000:
+        return 2
+    return None
 
 
 class Player:
@@ -254,7 +257,9 @@ def main():
                 above = 0 < barrel.pos.y - player.pos.y + BARREL_R < 40
                 if not player.on_ground and above and abs(barrel.pos.x - player.pos.x) < 12 and not barrel.scored:
                     barrel.scored = True
-                    score += int(100 * (score_multiplier(score) or 1))
+                    award = int(100 * (score_multiplier(score) or 1))
+                    score += award
+                    LAST_AWARD[0] = award
                     on_barrel_jumped(player, barrel)
             barrels[:] = [b for b in barrels if b.pos.y < HEIGHT + 30]
             if player.center().distance_to(pygame.Vector2(PRINCESS_POS)) < 24:
