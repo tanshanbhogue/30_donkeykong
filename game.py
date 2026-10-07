@@ -21,6 +21,17 @@ KONG_POS = (60, 200)
 PRINCESS_POS = (540, 200)
 
 
+POPUP_LIFETIME = 0.8  # seconds a floating label stays on screen
+POPUPS = []  # active floating labels: {"pos", "age", "text"}
+
+
+def update_popups(dt):
+    for popup in POPUPS:
+        popup["age"] += dt
+        popup["pos"].y -= 40 * dt
+    POPUPS[:] = [p for p in POPUPS if p["age"] < POPUP_LIFETIME]
+
+
 def platform_y(platform, x):
     x1, x2, y1, y2 = platform
     return y1 + (y2 - y1) * (x - x1) / (x2 - x1)
@@ -36,8 +47,8 @@ def theme_color(score):
 
 
 def on_barrel_jumped(player, barrel):
-    """Called when the player clears a barrel; add a bonus effect here."""
-    pass
+    """Called when the player clears a barrel; spawns a floating "+100" label."""
+    POPUPS.append({"pos": pygame.Vector2(barrel.pos), "age": 0.0, "text": "+100"})
 
 
 def score_multiplier(score):
@@ -191,6 +202,10 @@ def draw_scene(screen, font, player, barrels, score, lives, state):
     body = pygame.Rect(0, 0, PLAYER_W, PLAYER_H)
     body.midbottom = (player.pos.x, player.pos.y)
     pygame.draw.rect(screen, (50, 180, 240), body)
+    for popup in POPUPS:
+        label = font.render(popup["text"], True, (255, 255, 120))
+        label.set_alpha(int(255 * (1 - popup["age"] / POPUP_LIFETIME)))
+        screen.blit(label, label.get_rect(center=(popup["pos"].x, popup["pos"].y - 20)))
     hud = font.render(f"Score {score}   Lives {lives}   R = reset", True, (240, 240, 240))
     screen.blit(hud, (10, 8))
     if state != "play":
@@ -218,7 +233,9 @@ def main():
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_r:
                 player.reset()
                 barrels.clear()
+                POPUPS.clear()
                 score, lives, state = 0, 3, "play"
+        update_popups(dt)
         if state == "play":
             player.update(dt, pygame.key.get_pressed())
             spawn_timer -= dt
